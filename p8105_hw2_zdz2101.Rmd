@@ -1,0 +1,19 @@
+---
+title: "p8105_hw2_zdz2101"
+author: "Zelos Zhu"
+date: "9/25/2018"
+output: github_document
+---
+
+#Problem 1
+```{r NYC Transit, message = FALSE}
+library(tidyverse)
+nyc_transit_df <- 
+  read_csv("Data Files/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+  janitor::clean_names() %>%
+  select(., line, station_name, station_latitude, station_longitude, route1, route2, route3, route4, route5, route6,
+                route7, route8, route9, route10, route11, entrance_type, entry, vending, ada) %>% 
+  mutate(entry = recode(entry, "YES" = 1, "NO" = 0))
+```
+
+#Problem 2
