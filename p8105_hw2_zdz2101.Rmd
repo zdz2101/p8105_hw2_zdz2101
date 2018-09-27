@@ -4,10 +4,14 @@ author: "Zelos Zhu"
 date: "9/25/2018"
 output: github_document
 ---
-
+###Load Packages
+```{r}
+library(tidyverse)
+library(readxl)
+library(p8105.datasets)
+```
 #Problem 1
 ```{r NYC Transit, message = FALSE}
-library(tidyverse)
 nyc_transit_df <- 
   read_csv("Data Files/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names() %>%
@@ -39,7 +43,6 @@ Read and clean precipitation data for 2016 and 2017. For each, omit rows without
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in both resulting datasets, and give examples of key variables. For available data, what was the total precipitation in 2017? What was the median number of sports balls in a dumpster in 2016?
 
 ```{r, Mr. Trash Wheel}
-library(readxl)
 mr_trash_wheel <- read_excel("Data Files/HealthyHarborWaterWheelTotals2017-9-26.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) %>%
   janitor::clean_names() %>%
   filter(!grepl("Total", month)) %>%
@@ -64,7 +67,7 @@ For this question:
 -format the data to use appropriate variable names;
 -focus on the “Overall Health” topic
 -exclude variables for class, topic, question, sample size, and everything from lower confidence limit to GeoLocation
--structure data so that responses (excellent to poor) are variables taking the value of Data_value
+-structure data so that responses (excellent to poor) are variables taking the value of Data_value (need to go OH)
 -create a new variable showing the proportion of responses that were “Excellent” or “Very Good”
 
 Using this dataset, do or answer the following:
@@ -73,9 +76,36 @@ Using this dataset, do or answer the following:
 -In 2002, what is the median of the “Excellent” response value?
 -Make a histogram of “Excellent” response values in the year 2002.
 -Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
-```{r}
-devtools::install_github("p8105/p8105.datasets")
-library(p8105.datasets)
+```{r BRFSS, warning = FALSE}
 data("brfss_smart2010")
+#just a promise for now, need to run something to get it into environment
 head(brfss_smart2010)
+
+#find which are undesirable
+names(brfss_smart2010)[-c(4:6, 8, 10:ncol(brfss_smart2010))]
+
+brfss_smart2010 <- janitor::clean_names(brfss_smart2010) %>%
+  filter(topic == "Overall Health") %>%
+  select(names(.)[-c(4:6, 8, 10:ncol(.))])
+
+brfss_smart2010_spread <- spread(brfss_smart2010, response, data_value)
+
+prop_excellent_vgood <- length(which(brfss_smart2010$response %in% c("Excellent", "Very Good")))/ nrow(brfss_smart2010)
+```
+
+```{r}
+###How many unique locations are included in the dataset? Is every state represented? What state is observed the most?
+length(unique(brfss_smart2010$locationdesc))
+length(unique(brfss_smart2010$locationabbr)) #more because we counting DC
+sort(table(brfss_smart2010$locationabbr), decreasing = TRUE) #New Jersey
+
+#In 2002, what is the median of the “Excellent” response value?
+median(brfss_smart2010_spread$Excellent[which(brfss_smart2010_spread$year == 2002)], na.rm = TRUE)
+
+#Make a histogram of “Excellent” response values in the year 2002.
+ggplot(brfss_smart2010_spread[which(brfss_smart2010_spread$year == 2002),], aes(x=Excellent)) + geom_histogram()
+
+#Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+plot_df <- filter(brfss_smart2010_spread, locationdesc %in% c("NY - New York County","NY - Queens County"))
+ggplot(plot_df, aes(x=year, y=Excellent)) + geom_point(aes(color=locationdesc))
 ```
