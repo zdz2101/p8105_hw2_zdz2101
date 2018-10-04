@@ -13,6 +13,7 @@ library(p8105.datasets)
 
 #Problem 1
 ```{r NYC Transit, message = FALSE}
+#Read in the data to 
 nyc_transit_df <- 
   read_csv("Data Files/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names() %>%
@@ -20,21 +21,22 @@ nyc_transit_df <-
                 route7, route8, route9, route10, route11, entrance_type, entry, vending, ada) %>% 
   mutate(entry = recode(entry, "YES" = TRUE, "NO" = FALSE))
 
-#Distinct Stations
+#Distinct Stations -- unite just line name and station name
 distinct_stations1 <- unique(paste(nyc_transit_df$line, nyc_transit_df$station_name))
 head(distinct_stations1)
 length(distinct_stations1)
 
-#Distinct Stations if you include Route number
+#Distinct Stations -- if you include Route number, in theory should come out to be the same length
+#I expand on the discrepancy in my written solution
 distinct_stations2 <- unique(gsub("/NA", "", apply(nyc_transit_df[,names(nyc_transit_df)[c(1,2,5:15)]], 1, paste , collapse = "/" )))
 head(distinct_stations2)
 length(distinct_stations2)
 
-#ADA compliant
+#Table of ADA compliance
 table(nyc_transit_df$ada)
 
-#Vending and entrances
-table(nyc_transit_df$entry, nyc_transit_df$vending)
+#2-way table of vending and entrances
+table(data.frame(entry=nyc_transit_df$entry, vending=nyc_transit_df$vending))
 ```
 
 ##### Write a short paragraph about this dataset – explain briefly what variables the dataset contains, describe your data cleaning steps so far, and give the dimension (rows x columns) of the resulting dataset. Are these data tidy?
@@ -51,8 +53,8 @@ In terms of cleaning we've done, we selected the columns that was requested of u
 ##### Solution
 
 1) There are `r length(distinct_stations1)` distinct stations. However if you dig a little deeper, you see that if you were to combine route into the line/station names you end up with `r length(distinct_stations2)` distinct stations, a discrepancy of 2 stations. It's important to shine a light on these stations so the first one is: "Queens Boulevard/Forest Hills-71st Av" has a station that serves the "e", a miscoded letter for "E" (row 1628 of the original data). The other station is "6 Avenue/47-50th Sts Rockefeller Center/B/D/F/M/7" (row 109 of the original data) where the 7 does not actually serve this stop, doubled check with the MTA official stops, another miscode in the dataset.
-2) There are `r length(which(nyc_transit_df$ada == TRUE))` ada compliant stations. 
-3) Among stations without vending, `r table(nyc_transit_df$entry, nyc_transit_df$vending)[2]/table(nyc_transit_df$entry, nyc_transit_df$vending)[1]` of those stations allow entrance.
+2) Among the total `r nrow(nyc_transit_df)` stations, there are `r length(which(nyc_transit_df$ada == TRUE))` ADA compliant stations. 
+3) Among the `r sum(table(data.frame(entry=nyc_transit_df$entry, vending=nyc_transit_df$vending))[1:2])` stations that don't have vending, `r table(nyc_transit_df$entry, nyc_transit_df$vending)[2]/table(nyc_transit_df$entry, nyc_transit_df$vending)[1]` of those stations allow entrance.
 
 ##### Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
 
@@ -132,7 +134,7 @@ For this question:
 -create a new variable showing the proportion of responses that were “Excellent” or “Very Good”
 
 ```{r BRFSS, warning = FALSE}
-data("brfss_smart2010") 
+data("brfss_smart2010")
 brfss_smart2010 <- janitor::clean_names(brfss_smart2010) %>%
   filter(topic == "Overall Health") %>%
   select(year, locationabbr, locationdesc, response, data_value) 
@@ -151,7 +153,7 @@ brfss_smart2010_spread <- spread(brfss_smart2010, response, data_value) %>%
 length(unique(brfss_smart2010$locationdesc))
 
 #Is every state represented?
-length(unique(brfss_smart2010$locationabbr)) #more than 50 because we counting DC
+length(unique(brfss_smart2010$locationabbr)) #more than 50 b/c we counting DC
 
 #What state is observed the most?
 sort(table(brfss_smart2010$locationabbr), decreasing = TRUE) #New Jersey
@@ -163,7 +165,7 @@ sort(table(brfss_smart2010$locationabbr), decreasing = TRUE) #New Jersey
 
 ###### 2) In 2002, what is the median of the “Excellent” response value?
 ```{r median 2002 excellent }
-median_exc_2002 <- median(brfss_smart2010_spread$excellent[which(brfss_smart2010_spread$year == 2002)], na.rm = TRUE)
+median_exc_2002 <- median(brfss_smart2010_spread$excellent[which(brfss_smart2010_spread$year == 2002 )], na.rm = TRUE)
 ```
 
 The median of Excellent response value in 2002 was `r median_exc_2002`. 
