@@ -54,7 +54,8 @@ In terms of cleaning we've done, we selected the columns that was requested of u
 2) There are `r length(which(nyc_transit_df$ada == TRUE))` ada compliant stations. 
 3) Among stations without vending, `r table(nyc_transit_df$entry, nyc_transit_df$vending)[2]/table(nyc_transit_df$entry, nyc_transit_df$vending)[1]` of those stations allow entrance.
 
-#####)Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+##### Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
 ```{r NYC transit reformat}
 #Reformat to combine route name and route numbers
 nyc_transit_df_reformated <- nyc_transit_df %>%
@@ -72,8 +73,8 @@ distinct_A_stations <- unique(A_stations$station_name)
 A_stations_ada_comp <- A_stations$station_name[which(A_stations$ada == TRUE)]
 ```
 
-- There are `r length(distinct_A_stations)` that serve the A train.
-- Among the `r nrow(A_stations)` A stations, `r length(A_stations_ada_comp)` are ADA compliant.
+- There are `r length(distinct_A_stations)` distinct stations that serve the A train.
+- Among the total `r nrow(A_stations)` A stations, `r length(A_stations_ada_comp)` are ADA compliant.
 
 
 #Problem 2
@@ -88,17 +89,17 @@ Read and clean the Mr. Trash Wheel sheet:
 Read and clean precipitation data for 2016 and 2017. For each, omit rows without precipitation data and add a variable year. Next, combine datasets and convert month to a character variable (the variable month.name is built into R and should be useful).
 
 ```{r, Mr. Trash Wheel}
-mr_trash_wheel <- read_excel("Data Files/HealthyHarborWaterWheelTotals2017-9-26.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) %>%
+mr_trash_wheel <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) %>%
   janitor::clean_names() %>%
   filter(!grepl("Total", month) & !is.na(dumpster) ) %>%
   mutate(sports_balls = as.integer(round(sports_balls))) %>%
   mutate(weekday_collected = factor(weekdays(date), levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")))
 
-precip_2016_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2017-9-26.xlsx", sheet = "2016 Precipitation", range = "A2:B14") %>%
+precip_2016_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2016 Precipitation", range = "A2:B14") %>%
   janitor::clean_names() %>%
   mutate(year = rep(2016, nrow(.)))
 
-precip_2017_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2017-9-26.xlsx", sheet = "2017 Precipitation", range = "A2:B10") %>%
+precip_2017_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2017 Precipitation", range = "A2:B10") %>%
   janitor::clean_names() %>%
   mutate(year = rep(2017, nrow(.)))
 
@@ -113,10 +114,11 @@ The Mr. Trash Wheel dataset contains `r nrow(mr_trash_wheel)` observations with 
 
 - Dumpster IDs `r mr_trash_wheel$dumpster[which(mr_trash_wheel$weekday_collected %in% c("Tuesday"))]` reported their data from Tuesdays.
 - Dumpster IDs `r mr_trash_wheel$dumpster[which(mr_trash_wheel$weight_tons > 4 & mr_trash_wheel$year == 2015)]` collected more than 4 tons in 2015.
-- Between May 2015 and August 2017, a total of `r sum(mr_trash_wheel$plastic_bottles)` plastic bottles was collected. 
+- Between May 2015 and August 2017, a total of `r as.character(sum(mr_trash_wheel$plastic_bottles))` plastic bottles was collected. 
 - Dumpster IDs `r mr_trash_wheel$dumpster[which(mr_trash_wheel$volume_cubic_yards > 18 & mr_trash_wheel$year == 2016)]` collected 18 or more cubic yards in 2016. 
 
 Total precipitation in 2017 was `r sum(precip_df$total[which(precip_df$year == 2017)])`. 
+
 In 2016, median number of sports balls in a dumpster was `r median(mr_trash_wheel$sports_balls[mr_trash_wheel$year == 2016], na.rm = TRUE)` balls.
 
 #Problem 3
@@ -157,6 +159,7 @@ sort(table(brfss_smart2010$locationabbr), decreasing = TRUE) #New Jersey
 
 - There are `r length(unique(brfss_smart2010$locationdesc))` unique locations. 
 - All 50 states are represented but if you include Washington DC as a "state" then we have `r length(unique(brfss_smart2010$locationabbr))`. 
+- New Jersey was observed the most.
 
 ###### 2) In 2002, what is the median of the “Excellent” response value?
 ```{r median 2002 excellent }
@@ -166,7 +169,7 @@ median_exc_2002 <- median(brfss_smart2010_spread$excellent[which(brfss_smart2010
 The median of Excellent response value in 2002 was `r median_exc_2002`. 
 
 ###### 3) Make a histogram of “Excellent” response values in the year 2002.
-```{r histogram 2002 excellent}
+```{r histogram 2002 excellent, message = FALSE}
 excellent_histo <- brfss_smart2010_spread %>% filter(year == 2002)
 
 (ggplot(excellent_histo, aes(x = excellent))
