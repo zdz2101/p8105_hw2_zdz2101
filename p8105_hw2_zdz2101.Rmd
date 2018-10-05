@@ -13,7 +13,7 @@ library(p8105.datasets)
 
 #Problem 1
 ```{r NYC Transit, message = FALSE}
-#Read in the data to 
+#Read in the data and then tidy it
 nyc_transit_df <- 
   read_csv("Data Files/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names() %>%
@@ -22,7 +22,7 @@ nyc_transit_df <-
   mutate(entry = recode(entry, "YES" = TRUE, "NO" = FALSE))
 
 #Distinct Stations -- unite just line name and station name
-distinct_stations1 <- unique(paste(nyc_transit_df$line, nyc_transit_df$station_name))
+distinct_stations1 <- unique(paste(nyc_transit_df$line, nyc_transit_df$station_name, sep = "/"))
 head(distinct_stations1)
 length(distinct_stations1)
 
@@ -32,10 +32,10 @@ distinct_stations2 <- unique(gsub("/NA", "", apply(nyc_transit_df[,names(nyc_tra
 head(distinct_stations2)
 length(distinct_stations2)
 
-#Table of ADA compliance
+#Table of ADA compliance (TRUEs and FALSEs)
 table(nyc_transit_df$ada)
 
-#2-way table of vending and entrances
+#2-way table of vending and entrances, easy way to illustrate what we're looking for
 table(data.frame(entry=nyc_transit_df$entry, vending=nyc_transit_df$vending))
 ```
 
@@ -52,23 +52,38 @@ In terms of cleaning we've done, we selected the columns that was requested of u
 
 ##### Solution
 
-1) There are `r length(distinct_stations1)` distinct stations. However if you dig a little deeper, you see that if you were to combine route into the line/station names you end up with `r length(distinct_stations2)` distinct stations, a discrepancy of 2 stations. It's important to shine a light on these stations so the first one is: "Queens Boulevard/Forest Hills-71st Av" has a station that serves the "e", a miscoded letter for "E" (row 1628 of the original data). The other station is "6 Avenue/47-50th Sts Rockefeller Center/B/D/F/M/7" (row 109 of the original data) where the 7 does not actually serve this stop, doubled check with the MTA official stops, another miscode in the dataset.
+1) There are `r length(distinct_stations1)` distinct stations. However if you dig a little deeper, you see that if you were to combine route into the line/station names you end up with `r length(distinct_stations2)` distinct stations, a discrepancy of 2 stations. It's important to shine a light on these stations so the first one is: "Queens Boulevard/Forest Hills-71st Av" has a station that serves the "e", a miscoded letter for "E" (row 1628 of the original data). The other station is "6 Avenue/47-50th Sts Rockefeller Center/B/D/F/M/7" (row 109 of the original data) where the 7 does not actually serve this stop; I doubled check with the MTA official stops, another miscode in the dataset. 
 2) Among the total `r nrow(nyc_transit_df)` stations, there are `r length(which(nyc_transit_df$ada == TRUE))` ADA compliant stations. 
 3) Among the `r sum(table(data.frame(entry=nyc_transit_df$entry, vending=nyc_transit_df$vending))[1:2])` stations that don't have vending, `r table(nyc_transit_df$entry, nyc_transit_df$vending)[2]/table(nyc_transit_df$entry, nyc_transit_df$vending)[1]` of those stations allow entrance.
 
 ##### Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
-
-```{r NYC transit reformat}
-#Reformat to combine route name and route numbers
-nyc_transit_df_reformated <- nyc_transit_df %>%
+```{r NYC transit reformatted using unite, eval = FALSE, echo = FALSE}
+#Reformat to combine route name and route numbers -- I thought this way would be faster/easier to answer question, I used unite
+nyc_transit_df_reformated_unite <- nyc_transit_df %>%
   unite(route_num_name, line, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, sep = "_") %>% 
-  mutate(route_num_name = tolower(gsub("_NA", "", route_num_name)))
-
-head(nyc_transit_df_reformated)
+  mutate(route_num_name =  tolower(gsub("_NA", "", route_num_name)))
+head(nyc_transit_df_reformated_unite)
 
 #Filter by A stations
-A_stations <- nyc_transit_df_reformated %>%
+A_stations_unite <- nyc_transit_df_reformated_unite %>%
   filter(grepl("_a", route_num_name))
+
+distinct_A_stations <- unique(A_stations_unite$station_name)
+
+A_stations_ada_comp <- A_stations_unite$station_name[which(A_stations$ada == TRUE)]
+```
+
+```{r NYC transit reformatted using gather}
+#Reformat data so that route number and route name are distinct variables
+nyc_transit_df_reformated <-  nyc_transit_df %>% 
+  gather( key = route_num, value = route_name, route1:route11) %>%
+  mutate(route_name = tolower(route_name))
+  
+head(nyc_transit_df_reformated)
+
+#Filter by A stations using this gather method
+A_stations <- nyc_transit_df_reformated %>%
+  filter(route_name == "a")
 
 distinct_A_stations <- unique(A_stations$station_name)
 
@@ -90,7 +105,7 @@ Read and clean the Mr. Trash Wheel sheet:
 
 Read and clean precipitation data for 2016 and 2017. For each, omit rows without precipitation data and add a variable year. Next, combine datasets and convert month to a character variable (the variable month.name is built into R and should be useful).
 
-```{r, Mr. Trash Wheel}
+```{r, Mr. Trash Wheel read in}
 mr_trash_wheel <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "Mr. Trash Wheel", range = cell_cols("A:N")) %>%
   janitor::clean_names() %>%
   filter(!grepl("Total", month) & !is.na(dumpster) ) %>%
@@ -164,7 +179,7 @@ sort(table(brfss_smart2010$locationabbr), decreasing = TRUE) #New Jersey
 - New Jersey was observed the most.
 
 ###### 2) In 2002, what is the median of the “Excellent” response value?
-```{r median 2002 excellent }
+```{r median 2002 excellent}
 median_exc_2002 <- median(brfss_smart2010_spread$excellent[which(brfss_smart2010_spread$year == 2002 )], na.rm = TRUE)
 ```
 
