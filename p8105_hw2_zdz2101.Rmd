@@ -116,7 +116,7 @@ precip_2016_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.
   janitor::clean_names() %>%
   mutate(year = rep(2016, nrow(.)))
 
-precip_2017_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2017 Precipitation", range = "A2:B10") %>%
+precip_2017_df <- read_excel("Data Files/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = "2017 Precipitation", range = "A2:B14") %>%
   janitor::clean_names() %>%
   mutate(year = rep(2017, nrow(.)))
 
